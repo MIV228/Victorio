@@ -3,9 +3,10 @@ import sys
 from PyQt6 import uic, QtWidgets
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QWidget, QApplication, QLabel, QPushButton, QMessageBox, QDialog, QMainWindow
+from PyQt6.QtWidgets import QWidget, QApplication, QLabel, QPushButton, QMessageBox, QDialog, QMainWindow, \
+    QStackedWidget
 
-f = ""
+currScreen = 0
 
 class MainMenu(QMainWindow):
     def __init__(self):
@@ -23,7 +24,6 @@ class MainMenu(QMainWindow):
         #self.b_exit = QPushButton("b_exit", self)
 
         self.b_exit.clicked.connect(self.exitClicked)
-        self.b_create.clicked.connect(self.createClicked)
 
     def exitClicked(self):
         confirmation = QMessageBox()
@@ -38,24 +38,27 @@ class MainMenu(QMainWindow):
         if clickedButton == QMessageBox.StandardButton.Yes:
             sys.exit(0)
 
-    def createClicked(self):
-        global f
-        f, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Создать викторину", "C:/",
-                                                            "Файлы викторин (*.vict)")
 
 class Create(QMainWindow):
     def __init__(self):
-        global f
+        global currScreen
         super().__init__()
         uic.loadUi("ui/create.ui", self)
-        if f:
-            self.f = open(f, mode="w")
-            self.setWindowTitle(f)
-        self.initUI()
-        self.setMouseTracking(True)
+        if currScreen == 1:
+            self.openFileSequence()
 
-    def initUI(self):
-        self.setWindowTitle('Координаты')
+        self.questions = [] # (вопрос, несколько ответов, ответы (строки с + или - в начале))
+        self.currQuestion = 0
+        self.b_add.clicked.connect(self.addAnswer())
+
+    def openFileSequence(self):
+        file, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Создать викторину", "C:/",
+                                                        "Файлы викторин (*.vict)")
+        with open(file, mode="w") as f:
+            self.setWindowTitle("".join([f, " - Victorio"]))
+
+    def addAnswer(self):
+        pass
 
 
 class Play(QMainWindow):
@@ -63,7 +66,6 @@ class Play(QMainWindow):
         super().__init__()
         uic.loadUi("ui/play.ui", self)
         self.initUI()
-        self.setMouseTracking(True)
 
     def initUI(self):
         self.setGeometry(300, 300, 300, 300)
@@ -89,6 +91,12 @@ class Play(QMainWindow):
             self.lbl.setPixmap(self.pixmap)
 
 
+
+def buttonAction(w: QStackedWidget, i):
+    global currScreen
+    w.setCurrentIndex(i)
+    currScreen = i
+
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     main_menu = MainMenu()
@@ -99,8 +107,8 @@ if __name__ == '__main__':
     w.addWidget(create)
     w.addWidget(play)
 
-    main_menu.b_create.clicked.connect(lambda: w.setCurrentIndex(1))
-    main_menu.b_open.clicked.connect(lambda: w.setCurrentIndex(2))
+    main_menu.b_create.clicked.connect(lambda: buttonAction(w, 1))
+    main_menu.b_open.clicked.connect(lambda: buttonAction(w, 2))
     #main_menu.b_settings.clicked.connect(lambda: w.setCurrentIndex(3))
 
     w.resize(640, 480)

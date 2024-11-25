@@ -75,7 +75,10 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QLineEdit" name="lineEdit">
+       <widget class="QLineEdit" name="answer">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
         <property name="inputMask">
          <string>Введите текст...</string>
         </property>
@@ -201,7 +204,7 @@
           <item>
            <widget class="QPushButton" name="b_exit">
             <property name="text">
-             <string>Сохранить</string>
+             <string>Сохранить и Выйти</string>
             </property>
            </widget>
           </item>
