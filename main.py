@@ -1,11 +1,8 @@
 import sys
 
 from PyQt6 import uic, QtWidgets
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QWidget, QApplication, QLabel, QPushButton, QMessageBox, QDialog, \
-    QMainWindow, QStackedWidget, QVBoxLayout, QCheckBox, QLineEdit
-from PyQt6.uic.properties import QtGui
+    QMainWindow, QStackedWidget, QVBoxLayout, QCheckBox, QLineEdit, QTextEdit, QHBoxLayout
 
 
 class MainMenu(QMainWindow):
@@ -64,8 +61,12 @@ class Create(QMainWindow):
 
         self.q = []  # (вопрос, несколько ответов bool, ответы (строки с + или - в начале))
         self.currAnswers = [] # ответы
+        self.currAnswerCheckboxes = []
         self.currQuestion = 0
         self.b_add.clicked.connect(self.addAnswer)
+        self.b_next.clicked.connect(self.openNextQuestion)
+        self.b_prev.clicked.connect(self.openPrevQuestion)
+        self.b_exit.clicked.connect(self.saveFile)
 
     def openFileSequence(self):
         file, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Создать викторину", "C:/",
@@ -81,72 +82,206 @@ class Create(QMainWindow):
         check = QCheckBox(text=self.answer.text())
         self.answer_layout.addWidget(check)
         self.currAnswers.append(self.answer.text())
+        self.currAnswerCheckboxes.append(check)
         self.answer.setText("")
 
     def saveCurrQuestion(self):
-        self.q[self.currQuestion][0] = self.question.text
-        self.q[self.currQuestion][1] = self.cb_manyanswers.checked
-        self.q[self.currQuestion][2] = \
-            ["+" if self.answer_layout.children[i].checked else "-" + self.currAnswers[i]
-             for i in range(len(self.currAnswers))]
+        if self.currQuestion == len(self.q) or not self.q:
+            self.q.append(["", False, []])
+        self.q[self.currQuestion][0] = self.question.toPlainText()
+        self.q[self.currQuestion][1] = self.cb_manyanswers.isChecked()
+        r = []
+        for i in range(len(self.currAnswers)):
+            if self.currAnswerCheckboxes[i].isChecked():
+                r.append("+" + self.currAnswers[i])
+            else:
+                r.append("-" + self.currAnswers[i])
+        self.q[self.currQuestion][2].clear()
+        self.q[self.currQuestion][2].extend(r)
 
     def loadQuestion(self):
+        if self.currQuestion == len(self.q) or not self.q:
+            self.q.append(["", False, []])
+        self.question: QTextEdit
+        self.question.setPlainText(self.q[self.currQuestion][0])
+        self.cb_manyanswers.setChecked(self.q[self.currQuestion][1])
         self.answer_layout: QVBoxLayout
-        self.currAnswers = self.q[self.currQuestion][2]
-        self.answer_layout.children().clear()
+        self.currAnswerCheckboxes.clear()
+        self.currAnswers.clear()
+        if self.q[self.currQuestion][2]:
+            self.currAnswers.extend(self.q[self.currQuestion][2])
+        while self.answer_layout.count() - 1 > 0:
+            child = self.answer_layout.takeAt(1)
+            if child.widget():
+                child.widget().deleteLater()
         for i in range(len(self.currAnswers)):
-            check = QCheckBox(text=self.currAnswers[i])
+            check = QCheckBox(text="")
             self.answer_layout.addWidget(check)
+            self.currAnswerCheckboxes.append(check)
+            if self.currAnswers[i][0] == '+':
+                check.setChecked(True)
+            self.currAnswers[i] = self.currAnswers[i][1:]
+            check.setText(self.currAnswers[i])
 
     def openNextQuestion(self):
+        if not self.currAnswers:
+            return
+
         self.saveCurrQuestion()
         self.currQuestion += 1
-        if self.currQuestion == len(self.q) - 1:
-            self.q.append(("", False, []))
         self.loadQuestion()
 
-    def closeEvent(self, e):
+    def openPrevQuestion(self):
+        if self.currQuestion == 0:
+            return
+
         self.saveCurrQuestion()
-        exit()
+        self.currQuestion -= 1
+        self.loadQuestion()
+
+    def saveFile(self, dontopenmainmenu = False):
+        self.saveCurrQuestion()
+        if self.q[-1][0] == "" or not self.q[-1][2]:
+            self.q.pop()
+        r = []
+        for q in self.q:
+            answers = []
+            for a in q[2]:
+                answers.append(a)
+            b = '0' if q[1] else '1'
+            r.append(q[0] + '|' + b + '|' + '$'.join(answers))
+        self.f.writelines("#".join(r))
+        print(r)
+        self.f.close()
+        if not dontopenmainmenu:
+            self.parent().show()
+            self.hide()
+
+    def closeEvent(self, e):
+        self.saveFile(dontopenmainmenu=True)
 
 
 class Play(QMainWindow):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
         uic.loadUi("ui/play.ui", self)
-        self.initUI()
 
-    def initUI(self):
-        self.setGeometry(300, 300, 300, 300)
-        self.setWindowTitle('Координаты')
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Открыть викторину", "C:/",
+                                                        "Файлы викторин (*.vict)")
+        self.setWindowTitle(file.split('/')[-1][:-5] + " - Victorio")
+        self._f = open(file, mode="r")
+        r = self._f.readline().split('#')
+        self.q = [] # все вопросы
+        for s in r:
+            a = s.split('|')
+            b = a[1] == '1'
+            self.q.append([a[0], b, a[2].split('$')])
+        print(self.q)
+        self._f.close()
 
-        self.lbl = QLabel(self)
-        self.pixmap = QPixmap()
-        self.car_index = 0
-        self.cars = ["car1.png", "car2.png", "car3.png"]
-        self.current_car = self.cars[self.car_index]
-        self.pixmap.load(self.current_car)
-        self.lbl.setPixmap(self.pixmap)
+        self.a = []
+        for i in range(len(self.q)):
+            self.a.append([])
+        self.currAnswers = []
+        self.currAnswerCheckboxes = []
+        self.currQuestion = 0
 
-    def mouseMoveEvent(self, event):
-        if event.pos().x() <= 250 and event.pos().y() <= 250:
-            self.lbl.move(event.pos().x(), event.pos().y())
+        self.b_next.clicked.connect(self.openNextQuestion)
+        self.b_prev.clicked.connect(self.openPrevQuestion)
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Space:
-            self.car_index = (self.car_index + 1) % 3
-            self.current_car = self.cars[self.car_index]
-            self.pixmap.load(self.current_car)
-            self.lbl.setPixmap(self.pixmap)
+        self.loadQuestion()
+
+    def loadQuestion(self):
+        self.question: QTextEdit
+        self.question.setPlainText(self.q[self.currQuestion][0])
+        self.answer_layout: QVBoxLayout
+        self.currAnswerCheckboxes.clear()
+        self.currAnswers.clear()
+        self.count.setText(f"Вопрос {str(self.currQuestion + 1)}/{str(len(self.q))}")
+        if self.q[self.currQuestion][2]:
+            self.currAnswers.extend(self.q[self.currQuestion][2])
+        while self.answer_layout.count() > 0:
+            child = self.answer_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        for i in range(len(self.currAnswers)):
+            check = QCheckBox(text="")
+            self.answer_layout.addWidget(check)
+            self.currAnswerCheckboxes.append(check)
+            if i in self.a[self.currQuestion]:
+                check.setChecked(True)
+            self.currAnswers[i] = self.currAnswers[i][1:]
+            check.setText(self.currAnswers[i])
+        if self.q[self.currQuestion][1] == '0':
+            for cb in self.answer_layout.children():
+                cb: QCheckBox
+                cb.checkStateChanged.connect(self.recheck, cb.isChecked())
+
+    def recheck(self, b=False):
+        for cb in self.currAnswerCheckboxes:
+            cb.setChecked(False)
+        self.sender().setChecked(b)
+
+    def saveCurrQuestion(self):
+        s = []
+        for i in range(len(self.currAnswerCheckboxes)):
+            if self.currAnswerCheckboxes[i].isChecked():
+                s.append(i)
+        self.a[self.currQuestion].clear()
+        self.a[self.currQuestion].extend(s)
+
+    def openNextQuestion(self):
+        if self.currQuestion == len(self.q) - 1:
+            confirmation = QMessageBox()
+
+            confirmation.setText("Завершить викторину?")
+            confirmation.setWindowTitle("Подтверждение")
+            confirmation.setIcon(QMessageBox.Icon.Question)
+            confirmation.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            yes = confirmation.button(QMessageBox.StandardButton.Yes)
+            yes.setText('Завершить')
+            no = confirmation.button(QMessageBox.StandardButton.No)
+            no.setText('Отмена')
+
+            clickedButton = confirmation.exec()
+
+            if clickedButton == QMessageBox.StandardButton.Yes:
+                self.exitPlaying()
+            else:
+                self.saveCurrQuestion()
+                self.loadQuestion()
+        else:
+            self.saveCurrQuestion()
+            self.currQuestion += 1
+            self.loadQuestion()
+
+    def openPrevQuestion(self):
+        if self.currQuestion == 0:
+            return
+
+        self.saveCurrQuestion()
+        self.currQuestion -= 1
+        self.loadQuestion()
+
+    def exitPlaying(self):
+        self.saveCurrQuestion()
+        dialog = QMessageBox()
+        dialog.setWindowTitle("Итоги")
+        dialog.setText(f"Поздравляем, вы прошли викторину на  баллов из  !")
+        dialog.setStandardButtons(
+            QMessageBox.StandardButton.Yes)
+        yes = dialog.button(QMessageBox.StandardButton.Ok)
+        yes.setText('Завершить викторину')
+
+        clickedButton = dialog.exec()
+
+        if clickedButton == QMessageBox.StandardButton.Ok:
+            self.parent().show()
+            self.hide()
 
     def closeEvent(self, e):
         exit()
-
-
-def buttonAction(w: QStackedWidget, i):
-    global currScreen
-    w.setCurrentIndex(i)
-    currScreen = i
 
 
 if __name__ == '__main__':
