@@ -1,6 +1,7 @@
 import sys
 
 from PyQt6 import uic, QtWidgets
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QWidget, QApplication, QLabel, QPushButton, QMessageBox, QDialog, \
     QMainWindow, QStackedWidget, QVBoxLayout, QCheckBox, QLineEdit, QTextEdit, QHBoxLayout
 
@@ -9,18 +10,12 @@ class MainMenu(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi("ui/main.ui", self)
-        self.initUI()
-
-    def initUI(self):
-        self.setGeometry(300, 300, 500, 300)
         self.setWindowTitle('Victorio')
+
+        self.logo.setPixmap(QPixmap("ui/images/logo.png"))
 
         self.b_create.clicked.connect(self.openCreateWindow)
         self.b_open.clicked.connect(self.openPlayWindow)
-        # self.b_open = QPushButton("b_open", self)
-        # self.b_settings = QPushButton("b_settings", self)
-        # self.b_exit = QPushButton("b_exit", self)
-
         self.b_exit.clicked.connect(self.exitClicked)
 
     def exitClicked(self):
@@ -29,8 +24,8 @@ class MainMenu(QMainWindow):
         confirmation.setText("Вы точно хотите выйти?")
         confirmation.setWindowTitle("Подтверждение")
         confirmation.setIcon(QMessageBox.Icon.Question)
-        confirmation.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        confirmation.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
         yes = confirmation.button(QMessageBox.StandardButton.Yes)
         yes.setText('Да')
         no = confirmation.button(QMessageBox.StandardButton.No)
@@ -57,9 +52,7 @@ class Create(QMainWindow):
         super().__init__(parent)
         uic.loadUi("ui/create.ui", self)
 
-        self.openFileSequence()
-
-        self.q = []  # (вопрос, несколько ответов bool, ответы (строки с + или - в начале))
+        self.q = []  # (вопрос, несколько ответов (bool), ответы (строки с + или - в начале))
         self.currAnswers = [] # ответы
         self.currAnswerCheckboxes = []
         self.currQuestion = 0
@@ -68,11 +61,17 @@ class Create(QMainWindow):
         self.b_prev.clicked.connect(self.openPrevQuestion)
         self.b_exit.clicked.connect(self.saveFile)
 
-    def openFileSequence(self):
+        self.openFileSequence()
+
+    def openFileSequence(self) -> bool :
         file, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Создать викторину", "C:/",
                                                         "Файлы викторин (*.vict)")
-        self.setWindowTitle(file + " - Victorio")
-        self.f = open(file, mode="w")
+        if file != "":
+            self.setWindowTitle(file + " - Victorio")
+            self.f = open(file, mode="w")
+        else:
+            self.hide()
+            self.parent().show()
 
     def addAnswer(self):
         if not self.answer.text():

@@ -16,6 +16,22 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
+     <spacer name="verticalSpacer_6">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="logoLayout">
       <item>
        <spacer name="horizontalSpacer">
@@ -37,9 +53,6 @@
        <widget class="QLabel" name="logo">
         <property name="text">
          <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap resource="logo.qrc">:/logo/logo.png</pixmap>
         </property>
        </widget>
       </item>
