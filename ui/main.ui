@@ -151,7 +151,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Открыть...</string>
+           <string>Редактировать...</string>
           </property>
          </widget>
         </item>
@@ -172,7 +172,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="b_settings">
+         <widget class="QPushButton" name="b_play">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -180,7 +180,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Настройки</string>
+           <string>Открыть...</string>
           </property>
          </widget>
         </item>

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>735</width>
-    <height>533</height>
+    <width>736</width>
+    <height>481</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,6 +25,11 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="font">
+         <font>
+          <italic>false</italic>
+         </font>
+        </property>
         <property name="placeholderText">
          <string>Введите вопрос...</string>
         </property>
@@ -39,6 +44,11 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <italic>true</italic>
+           </font>
           </property>
           <property name="text">
            <string>Картинка</string>
@@ -173,6 +183,11 @@
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
            <widget class="QCheckBox" name="cb_manyanswers">
+            <property name="font">
+             <font>
+              <pointsize>8</pointsize>
+             </font>
+            </property>
             <property name="layoutDirection">
              <enum>Qt::LeftToRight</enum>
             </property>
@@ -198,6 +213,25 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QLabel" name="count">
+            <property name="font">
+             <font>
+              <pointsize>10</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Вопрос 1/1</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -234,7 +268,7 @@
           <item>
            <widget class="QPushButton" name="b_next">
             <property name="text">
-             <string>Следующий</string>
+             <string>Новый</string>
             </property>
            </widget>
           </item>
