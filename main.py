@@ -39,14 +39,22 @@ class MainMenu(QMainWindow):
             exit()
 
     def openCreateWindow(self):
-        create_form = Create(self)
-        create_form.show()
-        self.hide()
+        file, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Создать викторину", "C:/",
+                                                        "Файлы викторин (*.vict)")
+
+        if file != "":
+            p_form = Create(file, self)
+            p_form.show()
+            # self.hide()
 
     def openCreateOpenWindow(self):
-        create_form = CreateOpen(self)
-        create_form.show()
-        self.hide()
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Открыть викторину", "C:/",
+                                                        "Файлы викторин (*.vict)")
+
+        if file != "":
+            p_form = CreateOpen(file, self)
+            p_form.show()
+            # self.hide()
 
     def openPlayWindow(self):
         file, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Открыть викторину", "C:/",
@@ -55,19 +63,20 @@ class MainMenu(QMainWindow):
         if file != "":
             p_form = Play(file, self)
             p_form.show()
-            #self.hide()
-
+            # self.hide()
 
 
 class Create(QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self, file, parent=None):
         super().__init__(parent)
         uic.loadUi("ui/create.ui", self)
 
         self.q = []  # (вопрос, несколько ответов (bool), ответы (строки с + или - в начале))
+        self.file = file
         self.currAnswers = []  # ответы
         self.currAnswerCheckboxes = []
         self.currQuestion = 0
+
         self.b_add.clicked.connect(self.addAnswer)
         self.b_next.clicked.connect(self.openNextQuestion)
         self.b_prev.clicked.connect(self.openPrevQuestion)
@@ -77,16 +86,16 @@ class Create(QMainWindow):
         self.openFileSequence()
 
     def openFileSequence(self):
-        file, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Создать викторину", "C:/",
-                                                        "Файлы викторин (*.vict)")
-        self.setWindowTitle(file + " - Victorio")
-        self.f = open(file, mode="w")
+        self.setWindowTitle(self.file + " - Victorio")
+        self.f = open(self.file, mode="w", encoding="utf-8")
 
     def addAnswer(self):
         if not self.answer.text():
             return
+
         self.answer_layout: QVBoxLayout
         self.answer: QLineEdit
+
         check = QCheckBox(text=self.answer.text())
         self.answer_layout.addWidget(check)
         self.currAnswers.append(self.answer.text())
@@ -96,8 +105,10 @@ class Create(QMainWindow):
     def saveCurrQuestion(self):
         if self.currQuestion == len(self.q) or not self.q:
             self.q.append(["", False, []])
+
         self.q[self.currQuestion][0] = self.question.toPlainText()
         self.q[self.currQuestion][1] = self.cb_manyanswers.isChecked()
+
         r = []
         for i in range(len(self.currAnswers)):
             if self.currAnswerCheckboxes[i].isChecked():
@@ -110,18 +121,22 @@ class Create(QMainWindow):
     def loadQuestion(self):
         if self.currQuestion == len(self.q) or not self.q:
             self.q.append(["", False, []])
+
         self.question: QTextEdit
         self.question.setPlainText(self.q[self.currQuestion][0])
         self.cb_manyanswers.setChecked(self.q[self.currQuestion][1])
         self.answer_layout: QVBoxLayout
         self.currAnswerCheckboxes.clear()
         self.currAnswers.clear()
+
         if self.q[self.currQuestion][2]:
             self.currAnswers.extend(self.q[self.currQuestion][2])
+
         while self.answer_layout.count() - 1 > 0:
             child = self.answer_layout.takeAt(1)
             if child.widget():
                 child.widget().deleteLater()
+
         for i in range(len(self.currAnswers)):
             check = QCheckBox(text="")
             self.answer_layout.addWidget(check)
@@ -130,11 +145,14 @@ class Create(QMainWindow):
                 check.setChecked(True)
             self.currAnswers[i] = self.currAnswers[i][1:]
             check.setText(self.currAnswers[i])
+
         self.count.setText(f"Вопрос {self.currQuestion + 1}/{len(self.q)}")
+
         if self.currQuestion == 0:
             self.b_prev.hide()
         else:
             self.b_prev.show()
+
         if self.currQuestion == len(self.q) - 1:
             self.b_next.setText("Новый")
         else:
@@ -179,14 +197,16 @@ class Create(QMainWindow):
 
 
 class CreateOpen(QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self, file, parent=None):
         super().__init__(parent)
         uic.loadUi("ui/create.ui", self)
 
+        self.file = file
         self.q = []  # (вопрос, несколько ответов (bool), ответы (строки с + или - в начале))
         self.currAnswers = []  # ответы
         self.currAnswerCheckboxes = []
         self.currQuestion = 0
+
         self.b_add.clicked.connect(self.addAnswer)
         self.b_next.clicked.connect(self.openNextQuestion)
         self.b_prev.clicked.connect(self.openPrevQuestion)
@@ -205,17 +225,17 @@ class CreateOpen(QMainWindow):
         self.loadQuestion()
 
     def openFileSequence(self):
-        file, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Открыть викторину", "C:/",
-                                                        "Файлы викторин (*.vict)")
-        self.setWindowTitle(file + " - Victorio")
-        self.f = open(file, mode="r+", encoding='utf-8')
+        self.setWindowTitle(self.file + " - Victorio")
+        self.f = open(self.file, mode="r+", encoding='utf-8')
         self.oldfile = self.f.readline()
 
     def addAnswer(self):
         if not self.answer.text():
             return
+
         self.answer_layout: QVBoxLayout
         self.answer: QLineEdit
+
         check = QCheckBox(text=self.answer.text())
         self.answer_layout.addWidget(check)
         self.currAnswers.append(self.answer.text())
@@ -225,32 +245,39 @@ class CreateOpen(QMainWindow):
     def saveCurrQuestion(self):
         if self.currQuestion == len(self.q) or not self.q:
             self.q.append(["", False, []])
+
         self.q[self.currQuestion][0] = self.question.toPlainText()
         self.q[self.currQuestion][1] = self.cb_manyanswers.isChecked()
+
         r = []
         for i in range(len(self.currAnswers)):
             if self.currAnswerCheckboxes[i].isChecked():
                 r.append("+" + self.currAnswers[i])
             else:
                 r.append("-" + self.currAnswers[i])
+
         self.q[self.currQuestion][2].clear()
         self.q[self.currQuestion][2].extend(r)
 
     def loadQuestion(self):
         if self.currQuestion == len(self.q) or not self.q:
             self.q.append(["", False, []])
+
         self.question: QTextEdit
         self.question.setPlainText(self.q[self.currQuestion][0])
         self.cb_manyanswers.setChecked(self.q[self.currQuestion][1])
         self.answer_layout: QVBoxLayout
         self.currAnswerCheckboxes.clear()
         self.currAnswers.clear()
+
         if self.q[self.currQuestion][2]:
             self.currAnswers.extend(self.q[self.currQuestion][2])
+
         while self.answer_layout.count() - 1 > 0:
             child = self.answer_layout.takeAt(1)
             if child.widget():
                 child.widget().deleteLater()
+
         for i in range(len(self.currAnswers)):
             check = QCheckBox(text="")
             self.answer_layout.addWidget(check)
@@ -259,11 +286,14 @@ class CreateOpen(QMainWindow):
                 check.setChecked(True)
             self.currAnswers[i] = self.currAnswers[i][1:]
             check.setText(self.currAnswers[i])
+
         self.count.setText(f"Вопрос {self.currQuestion + 1}/{len(self.q)}")
+
         if self.currQuestion == 0:
             self.b_prev.hide()
         else:
             self.b_prev.show()
+
         if self.currQuestion == len(self.q) - 1:
             self.b_next.setText("Новый")
         else:
@@ -287,9 +317,11 @@ class CreateOpen(QMainWindow):
 
     def saveFile(self, dontopenmainmenu=False):
         self.saveCurrQuestion()
+
         self.f.seek(0)
         if self.q[-1][0] == "" or not self.q[-1][2]:
             self.q.pop()
+
         r = []
         for q in self.q:
             answers = []
@@ -297,9 +329,11 @@ class CreateOpen(QMainWindow):
                 answers.append(a)
             b = '0' if q[1] else '1'
             r.append(q[0] + '|' + b + '|' + '$'.join(answers))
+
         self.f.writelines("#".join(r))
         print(r)
         self.f.close()
+
         if not dontopenmainmenu:
             self.parent().show()
             self.hide()
@@ -314,7 +348,7 @@ class Play(QMainWindow):
         uic.loadUi("ui/play.ui", self)
 
         self.setWindowTitle(file.split('/')[-1][:-5] + " - Victorio")
-        self._f = open(file, mode="r")
+        self._f = open(file, mode="r", encoding="utf-8")
         r = self._f.readline().split('#')
         self.q = []  # все вопросы
         for s in r:
@@ -339,16 +373,22 @@ class Play(QMainWindow):
     def loadQuestion(self):
         self.question: QTextEdit
         self.question.setPlainText(self.q[self.currQuestion][0])
+
         self.answer_layout: QVBoxLayout
         self.currAnswerCheckboxes.clear()
         self.currAnswers.clear()
+
+        self.count: QLabel
         self.count.setText(f"Вопрос {str(self.currQuestion + 1)}/{str(len(self.q))}")
+
         if self.q[self.currQuestion][2]:
             self.currAnswers.extend(self.q[self.currQuestion][2])
+
         while self.answer_layout.count() - 1 > 0:
             child = self.answer_layout.takeAt(1)
             if child.widget():
                 child.widget().deleteLater()
+
         for i in range(len(self.currAnswers)):
             check = QCheckBox(text="")
             self.answer_layout.addWidget(check)
@@ -357,13 +397,13 @@ class Play(QMainWindow):
                 check.setChecked(True)
             self.currAnswers[i] = self.currAnswers[i][1:]
             check.setText(self.currAnswers[i])
+
         if self.q[self.currQuestion][1]:
             for cb in self.answer_layout.children():
-                cb: QCheckBox
-                cb.checkStateChanged.connect(self.recheck, cb.isChecked())
-            self.label_answers.setText("Выберите несколько правильных вариантов ответа")
-        else:
+                cb.clicked.connect(self.recheck, cb.isChecked())
             self.label_answers.setText("Выберите один правильный вариант ответа")
+        else:
+            self.label_answers.setText("Выберите несколько правильных вариантов ответа")
 
     def recheck(self, b=False):
         for cb in self.currAnswerCheckboxes:
@@ -372,9 +412,11 @@ class Play(QMainWindow):
 
     def saveCurrQuestion(self):
         s = []
+
         for i in range(len(self.currAnswerCheckboxes)):
             if self.currAnswerCheckboxes[i].isChecked():
                 s.append(i)
+
         self.a[self.currQuestion].clear()
         self.a[self.currQuestion].extend(s)
 
@@ -387,8 +429,10 @@ class Play(QMainWindow):
             confirmation.setIcon(QMessageBox.Icon.Question)
             confirmation.setStandardButtons(
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
             yes = confirmation.button(QMessageBox.StandardButton.Yes)
             yes.setText('Завершить')
+
             no = confirmation.button(QMessageBox.StandardButton.No)
             no.setText('Отмена')
 
@@ -414,9 +458,38 @@ class Play(QMainWindow):
 
     def exitPlaying(self):
         self.saveCurrQuestion()
+
+        maxPoints = 0
+        points = 0
+        print(self.a)
+        for i in range(len(self.q)):
+            for s in range(len(self.q[i][2])):
+                if self.q[i][2][s].startswith('+'):
+                    maxPoints += 1
+                    if s in self.a[i]:
+                        points += 1
+                    else:
+                        points -= 1
+                else:
+                    if s in self.a[i]:
+                        points -= 1
+
+        if points < 0:
+            points = 0
+
         dialog = QMessageBox()
+
         dialog.setWindowTitle("Итоги")
-        dialog.setText(f"Поздравляем, вы прошли викторину на  баллов из  !")
+        if points > maxPoints / 2:
+            dialog.setText(f"Поздравляем, вы прошли викторину на {points} баллов из {maxPoints}! Браво!")
+        elif points == 0:
+            dialog.setText(
+                f"Вы прошли викторину на 0 баллов из {maxPoints}. "
+                f"Напомню, выбор неправильного ответа вычитает один балл!")
+        else:
+            dialog.setText(
+                f"Вы прошли викторину на {points} баллов из {maxPoints}. Неплохо, но можно было и постараться.")
+
         dialog.addButton(QMessageBox.StandardButton.Yes)
         yes = dialog.button(QMessageBox.StandardButton.Yes)
         yes.setText('Завершить викторину')
@@ -433,9 +506,11 @@ class Play(QMainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
+
     main_menu = MainMenu()
     # create = Create()
     # play = Play()
+    #
     # w = QtWidgets.QStackedWidget()
     # w.addWidget(main_menu)
     # w.addWidget(create)
